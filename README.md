@@ -28,7 +28,7 @@ Telegram Bot to search usedbook in Korean Aladin Bookstore
 
 ## Use Bot
 1. Login Telegram
-2. Search 'Aladin bookstore search bot' or access [t.me/Aladin_search_bot](t.me/Aladin_search_bot.) by your web browser
+2. Search 'Aladin bookstore search bot' or access [t.me/Aladin_search_bot](http://t.me/Aladin_search_bot.) by your web browser
 3. Just Use it
 
 ## Constraints
