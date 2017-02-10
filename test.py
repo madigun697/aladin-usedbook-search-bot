@@ -126,9 +126,9 @@ def set_shop(chat_id, shop_id):
     es.put()
 
 def get_shop(chat_id):
-    es = EnableStatus.get_by_id(str(chat_id))
-    if es:
-        return es.shop_id
+    # es = EnableStatus.get_by_id(str(chat_id))
+    # if es:
+    #     return es.shop_id
     return u'All'
 
 def get_enabled_chats():
@@ -164,8 +164,15 @@ def send_msg(chat_id, text, reply_to=None, no_preview=True, keyboard=None):
             })
         params['reply_markup'] = reply_markup
     try:
-        urllib2.urlopen(BASE_URL + 'sendMessage', urllib.urlencode(params)).read()
+        print(keyword)
+        print(len(text))
+        print(unicode(len(text)))
+        if len(text) < 5000:
+            print(text)
+        # print(text)
+        # urllib2.urlopen(BASE_URL + 'sendMessage', urllib.urlencode(params)).read()
     except Exception as e:
+        print(e.message)
         logging.exception(e)
 
 def broadcast(text):
@@ -212,29 +219,32 @@ def cmd_broadcast(chat_id, text):
 def cmd_echo(chat_id, text, reply_to):
     send_msg(chat_id, text, reply_to=reply_to)
 
-def cmd_search(chat_id, text):
-    send_msg(chat_id, u'검색 중입니다. 잠시만 기다려주세요')
-    reply = get_url(chat_id, text)
+def cmd_search(chat_id, text, page):
+    # send_msg(chat_id, u'검색 중입니다. 잠시만 기다려주세요')
+
+    while True:
+        reply = get_url(chat_id, text, page)
+        temp = u'page: ' + unicode(page) + u', reply: ' + unicode(len(reply))
+        print(temp)
+        page = page - 1
+        if len(reply) < 1000:
+            break
+
     send_msg(chat_id, reply, keyboard=SEARCH_KEYBOARD)
 
-def get_url(chat_id, title):
-    page = 50
-    while True:
-        url = ALADIN_URL
-        url += 'SearchWord='
-        url += title
-        if (not (get_shop(chat_id) == u'All')):
-            url += '&keytag='
-            url += get_shop(chat_id)
-        url += '&x=0&y=0'
-        url += '&ViewRowCount='
-        url += str(page)
-        quote_url = urllib.quote(url.decode('utf-8').encode('cp949'), safe=':/?=&')
-        reply = make_connection(chat_id, quote_url, title)
-        page = page - 1
-        if (len(reply) < 4000):
-            send_msg(chat_id, quote_url)
-            return reply
+def get_url(chat_id, title, page):
+    url = ALADIN_URL
+    url += 'SearchWord='
+    url += title
+    if (not (get_shop(chat_id) == u'All')):
+        url += '&keytag='
+        url += get_shop(chat_id)
+    url += '&x=0&y=0'
+    url += '&ViewRowCount='
+    url += str(page)
+    quote_url = urllib.quote(url.decode('utf-8').encode('cp949'), safe=':/?=&')
+    send_msg(chat_id, quote_url)
+    return make_connection(chat_id, quote_url, title)
 
 def make_connection(chat_id, url, title):
     tried = 0
@@ -243,7 +253,9 @@ def make_connection(chat_id, url, title):
     browser.set_handle_robots(False)
     while not connected:
         try:
-            response = browser.open(url)
+            res = browser.open(url)
+            response = res.read()
+            print(len(response))
             connected = True
             no_result = True
             soup = BeautifulSoup(response, 'html.parser')
@@ -356,71 +368,26 @@ def switch_shop_name(shop_id):
         u'C8': u'합정점'
     }.get(shop_id, u'전체')
 
-def process_cmds(msg):
-    msg_id = msg['message_id']
-    chat_id = msg['chat']['id']
-    text = msg.get('text')
-    if (not text):
-        return
-    if CMD_START == text:
-        cmd_start(chat_id)
-        return
-    if (not get_enabled(chat_id)):
-        return
-    if CMD_STOP == text:
-        cmd_stop(chat_id)
-        return
-    if CMD_HELP == text:
-        cmd_help(chat_id)
-        return
-    if CMD_GETSHOP == text:
-        cmd_getShop(chat_id)
-        return
-    if CMD_SHOP == text:
-        send_msg(chat_id, u'매장을 선택해주세요.', keyboard=SHOP_KEYBOARD)
-        return
-    if CMD_SEARCH == text:
-        get_url(chat_id)
-        return
-    cmd_shop_match = re.match('^' + CMD_SHOP + ' (.*)',text)
-    if cmd_shop_match:
-        cmd_setShop(chat_id, cmd_shop_match.group(1))
-        return
-    cmd_broadcast_match = re.match('^' + CMD_BROADCAST + ' (.*)', text)
-    if cmd_broadcast_match:
-        cmd_broadcast(chat_id, cmd_broadcast_match.group(1))
-        return
-    # cmd_echo(chat_id, text, reply_to=msg_id)
-    cmd_search(chat_id, text)
-    return
+# 10257
+# no response
+# keyword = "토플"
+# cmd_search("test", keyword)
 
-class MeHandler(webapp2.RequestHandler):
-    def get(self):
-        urlfetch.set_default_fetch_deadline(60)
-        self.response.write(json.dumps(json.load(urllib2.urlopen(BASE_URL + 'getMe'))))
+# 9226
+# response ok
+# keyword = "좌"
+# cmd_search("test", keyword)
 
-class GetUpdatesHandler(webapp2.RequestHandler):
-    def get(self):
-        urlfetch.set_default_fetch_deadline(60)
-        self.response.write(json.dumps(json.load(urllib2.urlopen(BASE_URL + 'getUpdates'))))
+# 9602
+# no response
+# keyword = "너"
+# cmd_search("test", keyword)
 
-class SetWebhookHandler(webapp2.RequestHandler):
-    def get(self):
-        urlfetch.set_default_fetch_deadline(60)
-        url = self.request.get('url')
-        if url:
-            self.response.write(json.dumps(json.load(urllib2.urlopen(BASE_URL + 'setWebhook', urllib.urlencode({'url': url})))))
+keyword = "토플"
+page = 50
+testurl = "http://www.aladin.co.kr/search/wsearchresult.aspx?SearchTarget=UsedStore&SearchWord=%C5%E4%C7%C3&x=0&y=0&ViewRowCount=50"
+cmd_search("test", keyword, page)
 
-class WebhookHandler(webapp2.RequestHandler):
-    def post(self):
-        urlfetch.set_default_fetch_deadline(60)
-        body = json.loads(self.request.body)
-        self.response.write(json.dumps(body))
-        process_cmds(body['message'])
-
-app = webapp2.WSGIApplication([
-    ('/me', MeHandler),
-    ('/updates', GetUpdatesHandler),
-    ('/set-webhook', SetWebhookHandler),
-    ('/webhook', WebhookHandler),
-], debug=True)
+# http://www.aladin.co.kr/search/wsearchresult.aspx?SearchTarget=UsedStore&SearchWord=%25C5%25E4%25C7%25C3&x=0&y=0&ViewRowCount=50
+# http://www.aladin.co.kr/search/wsearchresult.aspx?SearchTarget=UsedStore&SearchWord=%C5%E4%C7%C3&x=0&y=0&ViewRowCount=50
+# http://www.aladin.co.kr/search/wsearchresult.aspx?SearchTarget=UsedStore&SearchWord=%C5%E4%C7%C3&x=0&y=0&ViewRowCount=50
