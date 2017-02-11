@@ -48,6 +48,7 @@ MSG_STOP  = u'Stop Bot.'
 MSG_SHOP  = u'현재 지정된 매장은 '
 
 ALADIN_URL = 'http://www.aladin.co.kr/search/wsearchresult.aspx?SearchTarget=UsedStore&'
+MOBILE_URL = 'http://www.aladin.co.kr/m/msearch.aspx?SearchTarget=UsedStore&'
 
 # Custom keyboard
 START_KEYBOARD = [
@@ -164,12 +165,7 @@ def send_msg(chat_id, text, reply_to=None, no_preview=True, keyboard=None):
             })
         params['reply_markup'] = reply_markup
     try:
-        print(keyword)
-        print(len(text))
-        print(unicode(len(text)))
-        if len(text) < 5000:
-            print(text)
-        # print(text)
+        print(text)
         # urllib2.urlopen(BASE_URL + 'sendMessage', urllib.urlencode(params)).read()
     except Exception as e:
         print(e.message)
@@ -227,7 +223,7 @@ def cmd_search(chat_id, text, page):
         temp = u'page: ' + unicode(page) + u', reply: ' + unicode(len(reply))
         print(temp)
         page = page - 1
-        if len(reply) < 1000:
+        if len(reply) < 9000:
             break
 
     send_msg(chat_id, reply, keyboard=SEARCH_KEYBOARD)
@@ -242,24 +238,24 @@ def get_url(chat_id, title, page):
     url += '&x=0&y=0'
     url += '&ViewRowCount='
     url += str(page)
-    quote_url = urllib.quote(url.decode('utf-8').encode('cp949'), safe=':/?=&')
-    send_msg(chat_id, quote_url)
-    return make_connection(chat_id, quote_url, title)
+    return make_connection(chat_id, url, title)
 
 def make_connection(chat_id, url, title):
+    quote_url = urllib.quote(url.decode('utf-8').encode('cp949'), safe=':/?=&')
     tried = 0
     connected = False
     browser = mechanize.Browser()
     browser.set_handle_robots(False)
     while not connected:
         try:
-            res = browser.open(url)
+            res = browser.open(quote_url)
             response = res.read()
             print(len(response))
             connected = True
             no_result = True
             soup = BeautifulSoup(response, 'html.parser')
-            title = '*Search Result* - _' + title + '_\n' + url
+            murl = url.replace(ALADIN_URL, MOBILE_URL)
+            title = '*Search Result* - _' + title + '_\n' + quote_url + '\n(mobile: ' + murl + ')'
             first_shop = True
             for x in soup.findAll(True, {'class': ['bo3', 'usedshop_off_text3']}):
                 if (x.name == 'b'):

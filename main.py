@@ -48,6 +48,7 @@ MSG_STOP  = u'Stop Bot.'
 MSG_SHOP  = u'현재 지정된 매장은 '
 
 ALADIN_URL = 'http://www.aladin.co.kr/search/wsearchresult.aspx?SearchTarget=UsedStore&'
+MOBILE_URL = 'http://www.aladin.co.kr/m/msearch.aspx?SearchTarget=UsedStore&'
 
 # Custom keyboard
 START_KEYBOARD = [
@@ -206,7 +207,7 @@ def cmd_getShop(chat_id):
         send_msg(chat_id, u'먼저 봇을 활성화시켜주시기 바랍니다.', keyboard=START_KEYBOARD)
 
 def cmd_broadcast(chat_id, text):
-    send_msg(chat_id, u'Broadcast Messages.')
+    send_msg(chat_id, u'공지사항을 전달드립니다')
     broadcast(text)
 
 def cmd_echo(chat_id, text, reply_to):
@@ -229,25 +230,25 @@ def get_url(chat_id, title):
         url += '&x=0&y=0'
         url += '&ViewRowCount='
         url += str(page)
-        quote_url = urllib.quote(url.decode('utf-8').encode('cp949'), safe=':/?=&')
-        reply = make_connection(chat_id, quote_url, title)
+        reply = make_connection(chat_id, url, title)
         page = page - 1
         if (len(reply) < 4000):
-            send_msg(chat_id, quote_url)
             return reply
 
 def make_connection(chat_id, url, title):
+    quote_url = urllib.quote(url.decode('utf-8').encode('cp949'), safe=':/?=&')
+    murl = url.replace(ALADIN_URL, MOBILE_URL)
     tried = 0
     connected = False
     browser = mechanize.Browser()
     browser.set_handle_robots(False)
     while not connected:
         try:
-            response = browser.open(url)
+            response = browser.open(quote_url)
             connected = True
             no_result = True
             soup = BeautifulSoup(response, 'html.parser')
-            title = '*Search Result* - _' + title + '_\n' + url
+            title = '*Search Result* - _' + title + '_\n' + quote_url + '\n(mobile: ' + murl + ')'
             first_shop = True
             for x in soup.findAll(True, {'class': ['bo3', 'usedshop_off_text3']}):
                 if (x.name == 'b'):
