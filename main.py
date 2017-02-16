@@ -33,14 +33,16 @@ CMD_BROADCAST = '/broadcast'
 CMD_SHOP      = '/shop'
 CMD_GETSHOP   = '/getshop'
 CMD_SEARCH    = '/search'
+CMD_LOCATION  = '/location'
 
 # Help Messages & Response Messages
 USAGE = u"""알라딘 중고서적 검색 봇 사용법
-/start   - 봇 시작하기
-/stop    - 봇 중단하기
-/shop    - 특정 매장 설정하기
-/getshop - 설정된 매장 보기
-/help    - 도움말 보기
+/start     - 봇 시작하기
+/stop      - 봇 중단하기
+/shop      - 특정 매장 설정하기
+/location  - 특정 매장 위치보기
+/getshop   - 설정된 매장 보기
+/help      - 도움말 보기
 """
 
 MSG_START = u'Start Bot.'
@@ -58,6 +60,7 @@ START_KEYBOARD = [
 
 SEARCH_KEYBOARD = [
         [CMD_SHOP],
+        [CMD_LOCATION],
         [CMD_GETSHOP],
         [CMD_STOP],
         [CMD_HELP],
@@ -97,6 +100,41 @@ SHOP_KEYBOARD = [
         [u'/shop 천안점'],
         [u'/shop 청주점'],
         [u'/shop 합정점']
+        ]
+
+LOCATION_KEYBOARD = [
+        [u'/location 강남점'],
+        [u'/location 건대점'],
+        [u'/location 광주점'],
+        [u'/location 노원점'],
+        [u'/location 대구동성로점'],
+        [u'/location 대구상인점'],
+        [u'/location 대전시청역점'],
+        [u'/location 대전은행점'],
+        [u'/location 대학로점'],
+        [u'/location 부산경성대, 부경대역점'],
+        [u'/location 부산서면점'],
+        [u'/location 부산센텀점'],
+        [u'/location 부천점'],
+        [u'/location 북수원홈플러스점'],
+        [u'/location 분당서현점'],
+        [u'/location 분당야탑점'],
+        [u'/location 산본점'],
+        [u'/location 수원점'],
+        [u'/location 수유점'],
+        [u'/location 신림점'],
+        [u'/location 신촌점'],
+        [u'/location 연신내점'],
+        [u'/location 울산점'],
+        [u'/location 인천계산홈플러스점'],
+        [u'/location 일산점'],
+        [u'/location 잠실롯데타워점'],
+        [u'/location 잠실신천점'],
+        [u'/location 전주점'],
+        [u'/location 종로점'],
+        [u'/location 천안점'],
+        [u'/location 청주점'],
+        [u'/location 합정점']
         ]
 
 class EnableStatus(ndb.Model):
@@ -169,6 +207,25 @@ def send_msg(chat_id, text, reply_to=None, no_preview=True, keyboard=None):
     except Exception as e:
         logging.exception(e)
 
+def send_location(chat_id, latitude, longitude, reply_to=None, keyboard=None):
+    params = {
+        'chat_id': str(chat_id),
+        'latitude': latitude,
+        'longitude': longitude
+    }
+    if keyboard:
+        reply_markup = json.dumps({
+            'keyboard': keyboard,
+            'resize_keyboard': True,
+            'one_time_keyboard': False,
+            'selective': (reply_to != None),
+            })
+        params['reply_markup'] = reply_markup
+    try:
+        urllib2.urlopen(BASE_URL + 'sendLocation', urllib.urlencode(params)).read()
+    except Exception as e:
+        logging.exception(e)
+
 def broadcast(text):
     for chat in get_enabled_chats():
         send_msg(chat.key.string_id(), text)
@@ -212,6 +269,11 @@ def cmd_broadcast(chat_id, text):
 
 def cmd_echo(chat_id, text, reply_to):
     send_msg(chat_id, text, reply_to=reply_to)
+
+def cmd_location(chat_id, shop):
+    location = switch_location(shop)
+    send_msg(chat_id, u'알라딘 ' + shop + u'의 위치입니다')
+    send_location(chat_id, location[0], location[1], keyboard=SEARCH_KEYBOARD)
 
 def cmd_search(chat_id, text):
     send_msg(chat_id, u'검색 중입니다. 잠시만 기다려주세요')
@@ -357,6 +419,42 @@ def switch_shop_name(shop_id):
         u'C8': u'합정점'
     }.get(shop_id, u'전체')
 
+def switch_location(shop_name):
+    return {
+      u'강남점': [37.5014815, 127.02632670000003],
+      u'건대점': [37.5409785, 127.07083510000007],
+      u'광주점': [35.1481813, 126.91771130000006],
+      u'노원점': [37.6557817, 127.06271089999996],
+      u'대구동성로점': [35.8706744, 128.59437360000004],
+      u'대구상인점': [35.8184931, 128.53701550000005],
+      u'대전시청역점': [36.3509397, 127.38893570000005],
+      u'대전은행점': [36.3289311, 127.42732799999999],
+      u'대학로점': [37.5825988, 126.99879950000002],
+      u'부산경성대, 부경대역점': [35.136681, 129.0992417],
+      u'부산서면점': [35.1555101, 129.05968789999997],
+      u'부산센텀점': [35.170092, 129.13304370000003],
+      u'부천점': [37.4843722, 126.7834047],
+      u'북수원홈플러스점': [37.3027342, 127.00872389999995],
+      u'분당서현점': [37.3838597, 127.12144519999993],
+      u'분당야탑점': [37.4116217, 127.1263444],
+      u'산본점': [37.3593926, 126.93156320000003],
+      u'수원점': [37.2660538, 127.00141689999998],
+      u'수유점': [37.5825988, 126.99879950000002],
+      u'신림점': [37.4824538, 126.9300991],
+      u'신촌점': [37.5575632, 126.93667519999997],
+      u'연신내점': [37.6175183, 126.91992529999993],
+      u'울산점': [35.5399407, 129.33629859999996],
+      u'인천계산홈플러스점': [37.5394227, 126.73621609999998],
+      u'일산점': [37.6591936, 126.76998400000002],
+      u'잠실롯데타워점': [37.5132357, 127.10110989999998],
+      u'잠실신천점': [37.5105713, 127.08034999999995],
+      u'전주점': [35.8206653, 127.11444819999997],
+      u'종로점': [37.5704151, 127.00895130000004],
+      u'천안점': [36.8184447, 127.15624819999994],
+      u'청주점': [36.6359211, 127.48944660000006],
+      u'합정점': [37.5490296, 126.9141052]
+    }.get(shop_name)
+
 def process_cmds(msg):
     msg_id = msg['message_id']
     chat_id = msg['chat']['id']
@@ -380,12 +478,19 @@ def process_cmds(msg):
     if CMD_SHOP == text:
         send_msg(chat_id, u'매장을 선택해주세요.', keyboard=SHOP_KEYBOARD)
         return
+    if CMD_LOCATION == text:
+        send_msg(chat_id, u'매장을 선택해주세요.', keyboard=LOCATION_KEYBOARD)
+        return
     if CMD_SEARCH == text:
         get_url(chat_id)
         return
     cmd_shop_match = re.match('^' + CMD_SHOP + ' (.*)',text)
     if cmd_shop_match:
         cmd_setShop(chat_id, cmd_shop_match.group(1))
+        return
+    cmd_location_match = re.match('^' + CMD_LOCATION + ' (.*)', text)
+    if cmd_location_match:
+        cmd_location(chat_id, cmd_location_match.group(1))
         return
     cmd_broadcast_match = re.match('^' + CMD_BROADCAST + ' (.*)', text)
     if cmd_broadcast_match:
