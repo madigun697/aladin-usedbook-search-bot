@@ -22,7 +22,7 @@ import mechanize
 import mechanize._response
 
 # Bot Token and Bot API URL
-TOKEN = '324210401:AAEn368XSdzx6egfvIxZsuMXguJ3HbDYMU0'
+TOKEN = ''
 BASE_URL = 'https://api.telegram.org/bot' + TOKEN + '/'
 
 # Command to response by Bot
